@@ -1,0 +1,18 @@
+{
+  "name": "anti-threadarmy",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @anti-threadarmy/web dev",
+    "dev:web": "pnpm --filter @anti-threadarmy/web dev",
+    "dev:extension": "pnpm --filter @anti-threadarmy/extension dev",
+    "build": "pnpm --filter @anti-threadarmy/web --filter @anti-threadarmy/extension build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @anti-threadarmy/extension build && node --test packages/threads-client/page-query.test.mjs tests/extension-background.test.mjs",
+    "test:browser": "node tests/browser-smoke.mjs"
+  }
+}
