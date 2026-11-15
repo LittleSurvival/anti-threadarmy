@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
@@ -46,6 +48,7 @@ fun App(accountClient: AccountClient? = null) {
     val client = accountClient ?: rememberAccountClient()
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
+    val inputFocus = remember { FocusRequester() }
     val uriHandler = LocalUriHandler.current
     val platform = rememberBlocklistPlatform()
     val blocklist = remember(platform) { BlocklistStore(platform) }
@@ -181,35 +184,56 @@ fun App(accountClient: AccountClient? = null) {
                             value = username,
                             onValueChange = { if (it.length <= 2048) username = it },
                             readOnly = busy,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(inputFocus),
                             singleLine = true,
                             placeholder = {
                                 Text("輸入 Threads ID 或貼上連結", fontSize = 14.sp, color = Muted)
                             },
                             leadingIcon = { Text("@", color = Muted, fontSize = 22.sp) },
                             trailingIcon = {
-                                Button(
-                                    onClick = { search() },
-                                    enabled = !busy && username.isNotBlank(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(0.dp),
-                                    modifier =
-                                        Modifier.padding(end = 8.dp).size(42.dp).semantics {
-                                            contentDescription = if (busy) "查詢中" else "查詢帳號"
-                                        },
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFF1F1F1),
-                                            contentColor = Background,
-                                        ),
-                                ) {
-                                    if (busy)
-                                        CircularProgressIndicator(
-                                            Modifier.size(18.dp),
-                                            color = Muted,
-                                            strokeWidth = 2.dp,
-                                        )
-                                    else Text("→", fontSize = 24.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (username.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                username = ""
+                                                inputFocus.requestFocus()
+                                                keyboard?.show()
+                                            },
+                                            enabled = !busy,
+                                            modifier =
+                                                Modifier.semantics { contentDescription = "清除輸入" },
+                                        ) {
+                                            Text(
+                                                "×",
+                                                fontSize = 24.sp,
+                                                color =
+                                                    if (busy) Muted.copy(alpha = 0.4f) else Muted,
+                                            )
+                                        }
+                                    }
+                                    Button(
+                                        onClick = { search() },
+                                        enabled = !busy && username.isNotBlank(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(0.dp),
+                                        modifier =
+                                            Modifier.padding(end = 8.dp).size(42.dp).semantics {
+                                                contentDescription = if (busy) "查詢中" else "查詢帳號"
+                                            },
+                                        colors =
+                                            ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFFF1F1F1),
+                                                contentColor = Background,
+                                            ),
+                                    ) {
+                                        if (busy)
+                                            CircularProgressIndicator(
+                                                Modifier.size(18.dp),
+                                                color = Muted,
+                                                strokeWidth = 2.dp,
+                                            )
+                                        else Text("→", fontSize = 24.sp)
+                                    }
                                 }
                             },
                             shape = RoundedCornerShape(18.dp),
