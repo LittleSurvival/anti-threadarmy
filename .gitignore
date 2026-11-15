@@ -16,4 +16,10 @@ local.properties
 xcuserdata/
 .env
 .env.local
-output/
+.tmp/
+/apps/extension/*.zip
+*.jks
+*.keystore
+/anti-threadarmy-release.keystore.dpapi
+*.p12
+*.pfx

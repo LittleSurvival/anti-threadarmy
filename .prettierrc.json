@@ -1,0 +1,8 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "endOfLine": "lf",
+  "plugins": ["@prettier/plugin-xml"],
+  "xmlWhitespaceSensitivity": "strict",
+  "overrides": [{ "files": "*.plist", "options": { "parser": "xml" } }]
+}

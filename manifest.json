@@ -1,0 +1,9 @@
+{
+  "id": "anti-threadarmy",
+  "name": "anti-threadarmy",
+  "version": "0.1.0",
+  "versionCode": 1,
+  "android": {
+    "applicationId": "io.github.littlesurvival.antithreadarmy"
+  }
+}

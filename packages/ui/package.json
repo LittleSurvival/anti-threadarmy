@@ -1,1 +1,19 @@
-{"name":"@anti-threadarmy/ui","version":"0.1.0","private":true,"type":"module","exports":{".":"./src/SearchApp.tsx","./styles.css":"./src/styles.css"},"dependencies":{"@anti-threadarmy/threads-client":"workspace:*"},"peerDependencies":{"react":"^19.0.0"},"devDependencies":{"@types/react":"19.3.0"}}
+{
+  "name": "@anti-threadarmy/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/SearchApp.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@anti-threadarmy/threads-client": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}

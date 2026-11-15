@@ -12,7 +12,13 @@
     "dev:extension": "pnpm --filter @anti-threadarmy/extension dev",
     "build": "pnpm --filter @anti-threadarmy/web --filter @anti-threadarmy/extension build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @anti-threadarmy/extension build && node --test packages/threads-client/page-query.test.mjs tests/extension-background.test.mjs",
-    "test:browser": "node tests/browser-smoke.mjs"
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --filter @anti-threadarmy/extension build && node --test packages/threads-client/tests/*.test.mjs apps/extension/tests/background.test.mjs",
+    "test:browser": "node apps/web/tests/browser-smoke.mjs && node apps/extension/tests/browser-smoke.mjs"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "3.4.2",
+    "prettier": "3.10.1"
   }
 }

@@ -1,0 +1,13 @@
+.tmp/
+.idea/
+**/node_modules/
+**/.venv/
+**/.next/
+**/.gradle/
+**/.kotlin/
+**/build/
+**/dist/
+**/error-reports/
+pnpm-lock.yaml
+**/gradlew*
+**/gradle/wrapper/
