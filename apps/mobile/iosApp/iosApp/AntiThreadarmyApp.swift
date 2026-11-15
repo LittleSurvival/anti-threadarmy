@@ -13,7 +13,9 @@ struct SharedView: UIViewControllerRepresentable {
 struct AntiThreadarmyApp: App {
     var body: some Scene {
         WindowGroup {
-            SharedView().ignoresSafeArea().preferredColorScheme(.dark)
+            SharedView()
+                .ignoresSafeArea()
+                .preferredColorScheme(.dark)
         }
     }
 }
