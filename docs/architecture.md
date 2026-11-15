@@ -1,41 +1,30 @@
-# 架構與執行邊界
+# 專案架構
 
-每個 App 在自身環境完成業務流程。Python 是已驗證過的協定參照，不是其他端的後端。
+各 App 可獨立執行查詢。以下是各端使用的執行環境。
 
-| App | 執行位置 | 瀏覽器環境 | 依賴其他 App |
-| --- | --- | --- | --- |
-| Web | Next.js Node route | 每次新建 headless Chrome context | 無 |
-| Chrome Extension | 擴充套件 service worker | 最小化無痕視窗 + MAIN world script | 無 |
-| Android | App 程序 | App 專屬 WebView | 無 |
-| iOS | App 程序 | 非持久 WKWebView | 無 |
-| Python CLI | Python 程序 | 原 Playwright headless Chrome | 無 |
+| App             | 查詢環境                                                                 |
+| --------------- | ------------------------------------------------------------------------ |
+| 網頁版          | Next.js 伺服器啟動獨立的 Chrome 工作階段                                 |
+| Chrome 擴充套件 | 隱藏的 offscreen 文件內建立 credentialless iframe                        |
+| Android         | App 專用的 WebView                                                       |
+| iOS             | 不保留網站資料的 WKWebView                                               |
+| Python GUI      | Chrome 應用程式視窗顯示共用介面；查詢另用獨立的 headless Chrome 工作階段 |
+| 命令列工具      | Playwright 啟動獨立的 Chrome 工作階段                                    |
 
-## 共用範圍
+`packages/ui` 提供網頁版與擴充套件共用的介面。兩者與手機版共用 `packages/threads-client` 的連結解析與查詢程式。手機版在建置時將這些程式打包，由各平台的 WebView 執行。
 
-- `packages/ui`：Web 與 Extension 的 React 畫面與樣式。
-- `packages/threads-client`：純頁面 JavaScript 協定函式；查詢時才讀取目前頁面的 query artifact、LSD、CSRF、session、revision 等動態值。
-- Mobile 的 `shared`：Compose UI、結果模型；Gradle 打包同一份頁面 JS，在 Android／iOS 的 WebView 執行。
-- Python 維持獨立參照，不加入執行依賴。
+Python GUI 也共用 `packages/ui`，由 Python 在 `127.0.0.1` 的隨機連接埠提供介面與查詢服務，以每次啟動產生的 token 驗證查詢請求。GUI 的 Chrome 應用程式視窗使用獨立暫存個人資料，關閉該工作階段所有視窗後停止服務並清理；headless 版透過命令列操作，兩版各自打包成 Windows EXE。
 
-HttpOnly Cookie（例如 ig_did）由各端瀏覽器的同源請求自動附帶，無需複製到 Node、Extension UI 或 Kotlin。CSRF header 使用當頁可讀 Cookie。只呼叫 account-search query，不實作後續發送復原訊息或更改帳號的 mutation。
+## 輸入與結果
 
-## 回應與錯誤
+各端接受 Threads ID、`@ID`、HTTPS 個人頁、貼文或回覆連結，以及 `/share/…` 短連結。完整網址使用路徑中的作者 ID，回覆請使用該則回覆的連結。短連結只接受 Threads 同源的轉址結果。解析失敗時停止查詢並顯示錯誤。
 
-HTTP 200 仍可能有頂層錯誤、業務錯誤或驗證要求，必須分別檢查。沒有 profiles 時呈現「沒有取得資料」，不能據此斷言帳號不存在。
+介面顯示帳號名稱、頭像、平台及已遮罩的聯絡資訊。伺服器回傳 HTTP 200 時仍須檢查內容是否有錯誤或驗證要求。若未取得帳號資料，介面會如實顯示結果。
 
-只向 UI 回傳 username、profiles 的 name/platform/avatarUrl、已遮罩 contacts 與查詢時間。cipher、cuid、token 和原始回應不離開頁面查詢函式；不新增查詢歷史。尚未提供 biography、followers 等 API 沒有回傳的資訊。
+失敗會附帶結構化錯誤報告，保留時間、階段、輸入、錯誤與堆疊，以及已取得的 HTTP 狀態、headers 和實際 response body。跨 WebView、Playwright 與 extension 訊息邊界時一併傳遞報告，避免只剩錯誤字串。GUI 提供報告彈窗與複製，網頁介面另可下載 JSON；Python 同時保存 JSON。Cookie、登入與復原權杖欄位會遮蔽。
 
-## Extension 取捨
+## 本地資料
 
-選擇 MV3，讓查詢與視窗清理留在背景 worker，不受 popup 關閉影響。使用完整頁面承載結果；不必同時啟動 Web。
+Android 與 iOS 的封鎖名單儲存在 App 內。匯出 JSON 時每筆只有 `id` 和 `name`，順序與自訂排序一致。匯入會驗證完整檔案，合併時去除 ID 前的 `@` 並忽略大小寫差異。
 
-content script 預設 isolated world，讀取頁面模組需要 MAIN world。此處用 `chrome.scripting.executeScript` 注入自包含的函式，不使用遠端載入程式碼或 eval。[Chrome scripting](https://developer.chrome.com/docs/extensions/reference/api/scripting)
-
-無痕存取需要使用者在 Chrome 擴充套件設定開啟。無痕視窗共用無痕 Cookie store，因此每次在送出前驗證未登入；不自動清理使用者的 Chrome 無痕 Cookie。[Chrome incognito](https://developer.chrome.com/docs/extensions/reference/manifest/incognito)
-
-## 平台限制
-
-- Web 需要 Node 與可執行 Chrome 的主機，目前為綁定 127.0.0.1 的本機工具；未完成公開多使用者部署。
-- Android WebView 使用 App 的資料儲存，不使用 Chrome profile。[Android WebView](https://developer.android.com/reference/android/webkit/WebView)
-- iOS 使用非持久 WKWebView；Windows 無法驗證 iOS 編譯與實際網站相容性。[Apple nonPersistent](https://developer.apple.com/documentation/webkit/wkwebsitedatastore/nonpersistent())
-- 網站內部模組或 query schema 改變時可能失效；會回報錯誤，不回退到過期 token，也不繞過網站驗證。
+網頁版預設只監聽 `127.0.0.1`。Chrome 擴充套件需要 Chrome 116 以上，每次查詢建立獨立暫時儲存空間，不使用一般分頁的登入狀態；成功、失敗或逾時後關閉背景文件並移除暫時請求規則。一般視窗即可使用，不需開啟無痕模式。

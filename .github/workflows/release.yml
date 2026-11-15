@@ -1,0 +1,173 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: ${{ !github.event.deleted }}
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.manifest.outputs.tag }}
+      title: ${{ steps.manifest.outputs.title }}
+      asset_prefix: ${{ steps.manifest.outputs.asset_prefix }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate manifest and tag
+        id: manifest
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 .github/scripts/check-release.py "$RELEASE_TAG"
+      - name: Check Android signing configuration
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret $name (see docs/release.md)"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+  extension:
+    needs: check
+    runs-on: ubuntu-24.04
+    env:
+      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - name: Package Chrome extension
+        working-directory: apps/extension/dist
+        run: zip -qr "../$ASSET_PREFIX-chrome.zip" .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: chrome
+          path: apps/extension/${{ env.ASSET_PREFIX }}-chrome.zip
+          if-no-files-found: error
+          overwrite: true
+
+  android:
+    needs: check
+    runs-on: ubuntu-24.04
+    env:
+      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Build release APK
+        working-directory: apps/mobile
+        run: sh gradlew :shared:testAndroidHostTest :androidApp:assembleRelease
+      - name: Sign and verify APK
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          umask 077
+          mkdir -p .tmp
+          signing_dir="$(mktemp -d "$PWD/.tmp/android-signing.XXXXXX")"
+          trap 'rm -rf -- "$signing_dir"' EXIT
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$signing_dir/release.jks"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          release_apk="apps/mobile/androidApp/build/outputs/apk/release/$ASSET_PREFIX-android.apk"
+          "$tools/zipalign" -P 16 -f 4 apps/mobile/androidApp/build/outputs/apk/release/androidApp-release-unsigned.apk "$signing_dir/aligned.apk"
+          "$tools/apksigner" sign --ks "$signing_dir/release.jks" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD --out "$release_apk" "$signing_dir/aligned.apk"
+          "$tools/apksigner" verify --verbose "$release_apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: apps/mobile/androidApp/build/outputs/apk/release/${{ env.ASSET_PREFIX }}-android.apk
+          if-no-files-found: error
+          overwrite: true
+
+  python:
+    needs: check
+    runs-on: windows-2025
+    env:
+      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
+    defaults:
+      run:
+        working-directory: apps/python-script
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          architecture: x64
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - run: python -m pip install -r requirements-build.txt
+      - name: Build GUI and headless EXEs
+        run: |
+          ./build_windows.ps1 -NamePrefix "$env:ASSET_PREFIX-python-windows-x64"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python
+          path: |
+            apps/python-script/dist/${{ env.ASSET_PREFIX }}-python-windows-x64-gui.exe
+            apps/python-script/dist/${{ env.ASSET_PREFIX }}-python-windows-x64-headless.exe
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    needs: [check, extension, android, python]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.check.outputs.tag }}
+      RELEASE_TITLE: ${{ needs.check.outputs.title }}
+      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: .tmp/release
+          merge-multiple: true
+      - name: Publish GitHub Release
+        working-directory: .tmp/release
+        shell: bash
+        run: |
+          assets=("$ASSET_PREFIX-chrome.zip" "$ASSET_PREFIX-android.apk" "$ASSET_PREFIX-python-windows-x64-gui.exe" "$ASSET_PREFIX-python-windows-x64-headless.exe")
+          sha256sum "${assets[@]}" > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TITLE" --generate-notes "${assets[@]}" SHA256SUMS.txt
