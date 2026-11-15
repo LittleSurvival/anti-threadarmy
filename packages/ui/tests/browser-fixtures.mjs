@@ -1,5 +1,23 @@
 // Shared UI test data; all account details are synthetic.
 import assert from "node:assert/strict";
+export async function verifyClearInput(page) {
+  const input = page.getByRole("textbox", { name: "Threads ID 或連結" });
+  const clear = page.getByRole("button", { name: "清除輸入", exact: true });
+  for (const keyboard of [false, true]) {
+    await input.fill("example_clear");
+    if (keyboard) {
+      await clear.focus();
+      await page.keyboard.press("Enter");
+    } else await clear.click();
+    assert.equal(await input.inputValue(), "");
+    assert.equal(await input.evaluate((element) => element === document.activeElement), true);
+    assert.equal(await clear.count(), 0);
+    assert.equal(
+      await page.getByRole("button", { name: "查詢帳號", exact: true }).isDisabled(),
+      true,
+    );
+  }
+}
 export const exampleContacts = [
   { type: "PHONE", value: "******0000" },
   { type: "PHONE", value: "+86 ******0000" },

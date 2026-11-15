@@ -5,6 +5,7 @@ import {
   exampleContacts,
   maskedContacts,
   verifyContactDetails,
+  verifyClearInput,
 } from "../../../packages/ui/tests/browser-fixtures.mjs";
 const executablePath = process.env.CHROMIUM_PATH;
 const baseURL = process.env.TEST_BASE_URL || "http://127.0.0.1:3000";
@@ -45,6 +46,8 @@ try {
     });
   });
   await page.goto(baseURL);
+  await verifyClearInput(page);
+  assert.equal(requests, 0, "Clearing must not submit a lookup");
   await page.getByRole("textbox", { name: "Threads ID 或連結" }).fill("invalid/id");
   await page.getByRole("button", { name: "查詢帳號", exact: true }).click();
   await page.getByText("請輸入有效的 Threads ID 或 Threads 連結。", { exact: true }).waitFor();
@@ -55,6 +58,9 @@ try {
   assert.equal(await page.getByText("******0000", { exact: true }).count(), 1);
   assert.equal(requests, 1);
   await verifyContactDetails(page);
+  await verifyClearInput(page);
+  await page.getByRole("heading", { name: "範例帳號", exact: true }).waitFor();
+  assert.equal(requests, 1, "Clearing preserves the result without another lookup");
   contacts = maskedContacts;
   await page
     .getByRole("textbox", { name: "Threads ID 或連結" })

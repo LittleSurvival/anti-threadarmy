@@ -4,6 +4,7 @@ import { startIsolatedThreadsFixture } from "./isolation-fixture.mjs";
 import {
   exampleContacts,
   verifyContactDetails,
+  verifyClearInput,
 } from "../../../packages/ui/tests/browser-fixtures.mjs";
 import { createRequire } from "node:module";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -84,6 +85,8 @@ try {
   assert.ok((await toolbarInput.boundingBox()).width >= 220);
   assert.equal(await page.locator("body").evaluate((body) => body.clientWidth), 380);
   await page.setViewportSize({ width: 380, height: 600 });
+  await verifyClearInput(page);
+  assert.equal(fixture.queries, 0);
   // A rebuilt UI can still talk to the previous worker until the extension is reloaded.
   await page.evaluate(() => {
     chrome.runtime.sendMessage = async () => ({
@@ -104,6 +107,9 @@ try {
   await page.getByRole("heading", { name: "範例帳號", exact: true }).waitFor({ timeout: 15000 });
   await verifyContactDetails(page);
   await verifyIsolationCleanup();
+  assert.equal(fixture.queries, 1);
+  await verifyClearInput(page);
+  await verifyContactDetails(page);
   assert.equal(fixture.queries, 1);
   await page
     .getByRole("textbox", { name: "Threads ID 或連結" })

@@ -81,6 +81,14 @@ def main():
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"{server.origin}/#{server.token}")
                 input_box = page.get_by_role("textbox", name="Threads ID 或連結")
+                clear = page.get_by_role("button", name="清除輸入", exact=True)
+                expect(clear).to_have_count(0)
+                input_box.fill("example_clear")
+                clear.click()
+                expect(input_box).to_have_value("")
+                expect(input_box).to_be_focused()
+                expect(clear).to_have_count(0)
+                assert calls == []
                 input_box.fill("invalid/id")
                 page.get_by_role("button", name="查詢帳號", exact=True).click()
                 expect(
@@ -101,6 +109,12 @@ def main():
                 if args.screenshot:
                     args.screenshot.parent.mkdir(parents=True, exist_ok=True)
                     page.screenshot(path=str(args.screenshot), full_page=True)
+                clear.focus()
+                page.keyboard.press("Enter")
+                expect(input_box).to_have_value("")
+                expect(input_box).to_be_focused()
+                expect(page.get_by_role("heading", name="範例帳號", exact=True)).to_be_visible()
+                assert calls == ["example_user"]
                 # The shared header reloads /. Keep authentication after this navigation.
                 page.get_by_role("link", name="anti-threadarmy 首頁").click()
                 input_box.fill("https://www.threads.com/share/ExampleShare")

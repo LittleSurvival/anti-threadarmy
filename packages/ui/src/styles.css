@@ -223,7 +223,7 @@ button:disabled {
   color: #727272;
   font-size: 14px;
 }
-.search-field button {
+.search-field .search-submit {
   height: 44px;
   width: 44px;
   flex-shrink: 0;
@@ -237,17 +237,37 @@ button:disabled {
     background 0.15s,
     transform 0.15s;
 }
-.search-field button:hover:not(:disabled) {
+.search-field .search-submit:hover:not(:disabled) {
   background: #fff;
   transform: translateX(1px);
 }
-.search-field button:disabled {
+.search-field .search-submit:disabled {
   background: #343434;
   color: #777;
 }
 .search-field svg {
   width: 22px;
   height: 22px;
+}
+.clear-input {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin-right: -7px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #858585;
+}
+.clear-input:hover:not(:disabled) {
+  background: #333;
+  color: #f3f3f3;
+}
+.clear-input:disabled {
+  opacity: 0.4;
 }
 .results {
   margin-top: 24px;

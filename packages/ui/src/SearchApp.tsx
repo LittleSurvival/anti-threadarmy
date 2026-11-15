@@ -158,6 +158,7 @@ export function SearchApp({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ErrorReport>();
+  const inputRef = useRef<HTMLInputElement>(null);
   const locked = useRef(false);
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -209,6 +210,7 @@ export function SearchApp({
             </span>
             <input
               id="thread-id"
+              ref={inputRef}
               autoFocus={autoFocus}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -221,8 +223,31 @@ export function SearchApp({
               readOnly={busy}
               aria-invalid={!!error}
             />
+            {input.length > 0 ? (
+              <button
+                type="button"
+                className="clear-input"
+                aria-label="清除輸入"
+                title="清除輸入"
+                disabled={busy}
+                onClick={() => {
+                  setInput("");
+                  inputRef.current?.focus();
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="m7 7 10 10M17 7 7 17"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            ) : null}
             <button
               type="submit"
+              className="search-submit"
               disabled={busy || !input.trim()}
               aria-label={busy ? "查詢中" : "查詢帳號"}
             >
