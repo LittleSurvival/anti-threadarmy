@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "116",
+  "description": "輸入 Threads ID，在瀏覽器內查詢帳號資料。",
+  "background": { "service_worker": "background.js", "type": "module" },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "permissions": ["offscreen", "declarativeNetRequestWithHostAccess"],
+  "host_permissions": ["https://www.threads.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.threads.com/*"],
+      "exclude_matches": ["https://www.threads.com/reset_password*"],
+      "js": ["post-menu.js"],
+      "css": ["post-menu.css"]
+    },
+    {
+      "matches": ["https://www.threads.com/reset_password"],
+      "js": ["query-frame.js"],
+      "all_frames": true,
+      "world": "MAIN",
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["index.html"], "matches": ["https://www.threads.com/*"] }
+  ],
+  "incognito": "spanning"
+}

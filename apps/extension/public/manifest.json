@@ -1,9 +1,0 @@
-{
-  "manifest_version":3,"name":"anti-threadarmy","version":"0.1.0",
-  "description":"輸入 Threads ID，在瀏覽器內查詢帳號資料。",
-  "action":{"default_title":"開啟 anti-threadarmy"},
-  "background":{"service_worker":"background.js","type":"module"},
-  "permissions":["scripting"],
-  "host_permissions":["https://www.threads.com/*"],
-  "incognito":"spanning"
-}

@@ -1,0 +1,46 @@
+button.anti-threadarmy-post-option[role="menuitem"] {
+  position: relative;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 9px;
+  padding: 10px 12px;
+  text-align: start;
+  white-space: nowrap;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.anti-threadarmy-post-option-divider {
+  margin-top: 9px;
+}
+
+button.anti-threadarmy-post-option-divider::before,
+button.anti-threadarmy-post-option::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+button.anti-threadarmy-post-option-divider::before {
+  top: -5px;
+}
+
+button.anti-threadarmy-post-option::after {
+  bottom: -5px;
+}
+
+button.anti-threadarmy-post-option:hover,
+button.anti-threadarmy-post-option:focus-visible {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
