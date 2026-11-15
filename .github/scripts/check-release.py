@@ -1,4 +1,5 @@
 """Validate the release tag and load public metadata into the current job."""
+
 import json
 import os
 import re
@@ -24,11 +25,17 @@ def main():
         raise ValueError("version must fit Chrome's extension version range")
     if type(version_code) is not int or not 1 <= version_code <= 2_100_000_000:
         raise ValueError("versionCode must be an integer from 1 to 2100000000")
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+", manifest["android"]["applicationId"]):
+    if not re.fullmatch(
+        r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+", manifest["android"]["applicationId"]
+    ):
         raise ValueError("invalid android.applicationId")
     tag = f"v{version}"
     if sys.argv[1:] != [tag]:
         raise ValueError(f"the Git tag must be {tag} for manifest version {version}")
+    notes = (path.parent / "UPDATE.md").read_text(encoding="utf-8").strip()
+    heading, _, body = notes.partition("\n")
+    if heading != f"# {tag}" or not body.strip():
+        raise ValueError(f"UPDATE.md must start with '# {tag}' and include release notes")
     metadata = {
         "RELEASE_TAG": tag,
         "RELEASE_TITLE": f"{name} {tag}",
