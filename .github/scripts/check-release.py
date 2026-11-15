@@ -1,4 +1,4 @@
-"""Validate the release manifest against the pushed tag and emit job outputs."""
+"""Validate the release tag and load public metadata into the current job."""
 import json
 import os
 import re
@@ -29,10 +29,16 @@ def main():
     tag = f"v{version}"
     if sys.argv[1:] != [tag]:
         raise ValueError(f"the Git tag must be {tag} for manifest version {version}")
-    outputs = {"tag": tag, "title": f"{name} {tag}", "asset_prefix": f"{release_id}-{tag}"}
-    if output := os.environ.get("GITHUB_OUTPUT"):
+    metadata = {
+        "RELEASE_TAG": tag,
+        "RELEASE_TITLE": f"{name} {tag}",
+        "ASSET_PREFIX": f"{release_id}-{tag}",
+    }
+    # Job outputs can be dropped when public names overlap masked signing secrets.
+    # Each job reads the manifest and keeps this metadata in its own environment.
+    if output := os.environ.get("GITHUB_ENV"):
         with open(output, "a", encoding="utf-8") as file:
-            for key, value in outputs.items():
+            for key, value in metadata.items():
                 print(f"{key}={value}", file=file)
     print(f"Validated release {tag} (Android versionCode {version_code})")
 

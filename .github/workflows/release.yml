@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  RELEASE_TAG: ${{ github.ref_name }}
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -16,18 +19,11 @@ jobs:
   check:
     if: ${{ !github.event.deleted }}
     runs-on: ubuntu-24.04
-    outputs:
-      tag: ${{ steps.manifest.outputs.tag }}
-      title: ${{ steps.manifest.outputs.title }}
-      asset_prefix: ${{ steps.manifest.outputs.asset_prefix }}
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Validate manifest and tag
-        id: manifest
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
         run: python3 .github/scripts/check-release.py "$RELEASE_TAG"
       - name: Check Android signing configuration
         shell: bash
@@ -49,12 +45,12 @@ jobs:
   extension:
     needs: check
     runs-on: ubuntu-24.04
-    env:
-      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Read release metadata
+        run: python3 .github/scripts/check-release.py "$RELEASE_TAG"
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -74,12 +70,12 @@ jobs:
   android:
     needs: check
     runs-on: ubuntu-24.04
-    env:
-      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Read release metadata
+        run: python3 .github/scripts/check-release.py "$RELEASE_TAG"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -117,8 +113,6 @@ jobs:
   python:
     needs: check
     runs-on: windows-2025
-    env:
-      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
     defaults:
       run:
         working-directory: apps/python-script
@@ -130,6 +124,8 @@ jobs:
         with:
           python-version: "3.14"
           architecture: x64
+      - name: Read release metadata
+        run: python ../../.github/scripts/check-release.py "$env:RELEASE_TAG"
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -156,10 +152,12 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RELEASE_TAG: ${{ needs.check.outputs.tag }}
-      RELEASE_TITLE: ${{ needs.check.outputs.title }}
-      ASSET_PREFIX: ${{ needs.check.outputs.asset_prefix }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Read release metadata
+        run: python3 .github/scripts/check-release.py "$RELEASE_TAG"
       - uses: actions/download-artifact@v8
         with:
           path: .tmp/release
