@@ -17,6 +17,14 @@ private val mask = Regex("""[*•●…]""")
 private val visibleDomain = Regex("[a-z0-9]")
 private val phoneMask = "*•●…xX"
 
+internal fun phoneLabel(value: String): String {
+    val number = value.replace(formatting, "")
+    val countable = number.isNotEmpty() && number.all { it in '0'..'9' || it in "*•●xX" }
+    return if (countable && !number.startsWith("00") && "..." !in value)
+        "手機號碼(${number.length}碼)"
+    else "手機號碼"
+}
+
 private fun emailCandidates(domain: String): List<String> {
     if (!mask.containsMatchIn(domain) || !visibleDomain.containsMatchIn(domain)) return emptyList()
     val exact =

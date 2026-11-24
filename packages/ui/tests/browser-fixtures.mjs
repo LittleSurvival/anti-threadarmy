@@ -38,6 +38,15 @@ export const maskedContacts = [
   { type: "EMAIL", value: "e***@g****.com" },
 ];
 export async function verifyContactDetails(page) {
+  const rows = page.locator(".profile-details > div");
+  await rows
+    .filter({ has: page.getByText("******0000", { exact: true }) })
+    .getByText("手機號碼(10碼)", { exact: true })
+    .waitFor();
+  await rows
+    .filter({ has: page.getByText("+40 *** *** *22", { exact: true }) })
+    .getByText("手機號碼", { exact: true })
+    .waitFor();
   const details = page.locator('[aria-label="聯絡資訊"]');
   await details.getByText(expectedRegions, { exact: true }).waitFor();
   await details.getByText("Gmail／未知／Proton Mail", { exact: true }).waitFor();

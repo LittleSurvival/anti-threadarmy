@@ -3,7 +3,16 @@ import data from "./contact-data.json" with { type: "json" };
 const callingCodes = Object.keys(data.callingCodes).sort((a, b) => b.length - a.length);
 const email = /^[^@\s]*@([a-z0-9*•●…-]+(?:\.[a-z0-9*•●…-]+)+)$/i;
 const mask = /[*•●…]/u;
+const phoneFormatting = /[\s().-]/g;
 const domains = Object.keys(data.emailProviders);
+
+export function phoneLabel(value) {
+  const number = value.replace(phoneFormatting, "");
+  if (!/^[0-9*•●xX]+$/u.test(number) || number.startsWith("00") || value.includes("...")) {
+    return "手機號碼";
+  }
+  return `手機號碼(${number.length}碼)`;
+}
 
 function emailCandidates(domain) {
   if (!mask.test(domain) || !/[a-z0-9]/.test(domain)) return [];
@@ -32,7 +41,7 @@ export function contactDetails(contacts) {
     if (contact.type === "PHONE") {
       // Remove formatting, never masking: +4*0 must not become +40.
       const normalized = /^\+[0-9\s*•●…xX().-]+$/u.test(value)
-        ? value.replace(/[\s().-]/g, "").slice(1)
+        ? value.replace(phoneFormatting, "").slice(1)
         : "";
       const prefix = normalized.match(/^([0-9]+)/)?.[1];
       const code = prefix && callingCodes.find((code) => prefix.startsWith(code));

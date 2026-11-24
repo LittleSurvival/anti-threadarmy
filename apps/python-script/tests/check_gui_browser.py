@@ -54,6 +54,7 @@ def main():
                     "caa_ar_ig_account_search": {
                         "profiles": [{"name": "範例帳號", "platform": "INSTAGRAM"}],
                         "contact_points": [
+                            {"type": "PHONE", "contact_point": "********75"},
                             {"type": "PHONE", "contact_point": "+886******0001"},
                             {"type": "PHONE", "contact_point": "+40 *** *** *22"},
                             {"type": "EMAIL", "contact_point": "e***@pm.me"},
@@ -99,8 +100,10 @@ def main():
                 input_box.press("Enter")
                 expect(page.get_by_role("button", name="查詢中", exact=True)).to_be_disabled()
                 expect(page.get_by_role("heading", name="範例帳號", exact=True)).to_be_visible()
+                expect(page.get_by_text("手機號碼(10碼)", exact=True)).to_be_visible()
+                expect(page.get_by_text("********75", exact=True)).to_be_visible()
                 expect(page.get_by_text("+886******0001", exact=True)).to_be_visible()
-                expect(page.get_by_text("台灣／羅馬尼亞", exact=True)).to_be_visible()
+                expect(page.get_by_text("未知／台灣／羅馬尼亞", exact=True)).to_be_visible()
                 expect(page.get_by_text("Proton Mail／未知", exact=True)).to_be_visible()
                 expect(page.get_by_text("可能的郵件服務", exact=True)).to_be_visible()
                 assert "QQ 郵箱（qq.com）" in page.get_by_label("聯絡資訊").inner_text()

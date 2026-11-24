@@ -350,7 +350,7 @@ fun App(accountClient: AccountClient? = null) {
                                         Detail("資料來源", profile.platform)
                                         account.contacts.forEach {
                                             Detail(
-                                                if (it.type == "PHONE") "手機號碼"
+                                                if (it.type == "PHONE") phoneLabel(it.value)
                                                 else if (it.type == "EMAIL") "電子郵件" else "聯絡方式",
                                                 it.value,
                                             )

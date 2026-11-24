@@ -5,6 +5,7 @@ export interface AccountResult {
   fetchedAt: string;
 }
 export function queryThreads(username: string): Promise<AccountResult>;
+export function phoneLabel(value: string): string;
 export function contactDetails(contacts: AccountResult["contacts"]): {
   phoneRegions: string[];
   possiblePhoneRegions: string[];

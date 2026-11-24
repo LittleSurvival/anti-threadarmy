@@ -5,6 +5,7 @@ import {
   contactDetails,
   createErrorReport,
   parseThreadsInput,
+  phoneLabel,
 } from "@anti-threadarmy/threads-client";
 import { ErrorReportDialog } from "./ErrorReportDialog";
 
@@ -64,7 +65,7 @@ export function AccountCard({ result }: { result: AccountResult }) {
           <div key={i}>
             <dt>
               {contact.type === "PHONE"
-                ? "手機號碼"
+                ? phoneLabel(contact.value)
                 : contact.type === "EMAIL"
                   ? "電子郵件"
                   : "聯絡方式"}

@@ -349,6 +349,22 @@ def send_request(request, output, page=None):
         with error_stage("save-response"):
             output.write_text(response["body"], encoding="utf-8")
     parsed = parse_account_response(response)
+    contacts = parsed["data"]["caa_ar_ig_account_search"].get("contact_points")
+    if isinstance(contacts, list):
+        for contact in contacts:
+            if not isinstance(contact, dict) or contact.get("type") != "PHONE":
+                continue
+            value = contact.get("contact_point")
+            if not isinstance(value, str):
+                continue
+            number = re.sub(r"[\s().-]", "", value)
+            if (
+                re.fullmatch(r"[0-9*•●xX]+", number)
+                and re.search(r"[*•●xX]", number)
+                and not number.startswith("00")
+                and "..." not in value
+            ):
+                print(f"手機號碼({len(number)}碼) {' '.join(value.split())}")
     print(json.dumps(parsed, ensure_ascii=False, indent=2))
     return 0
 

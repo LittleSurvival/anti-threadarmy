@@ -1,9 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { contactDetails } from "../contact-details.js";
+import { contactDetails, phoneLabel } from "../contact-details.js";
 
 const phone = (value) => ({ type: "PHONE", value });
 const email = (value) => ({ type: "EMAIL", value });
+
+test("local phone labels count visible digits and mask characters, excluding formatting", () => {
+  assert.equal(phoneLabel("********75"), "手機號碼(10碼)");
+  assert.equal(phoneLabel("(•••) ●●●-00XX"), "手機號碼(10碼)");
+  for (const value of ["+40 *** *** *22", "+4*0 ***22", "0040 ***22", "…75", "...75", ""]) {
+    assert.equal(phoneLabel(value), "手機號碼");
+  }
+});
 
 test("Romania and international codes are recognized before masked national digits", () => {
   assert.deepEqual(contactDetails([phone("+40 *** *** *22")]).phoneRegions, ["羅馬尼亞"]);

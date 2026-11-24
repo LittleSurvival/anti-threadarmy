@@ -4,6 +4,15 @@ import kotlin.test.*
 
 class ContactDetailsTest {
     @Test
+    fun phoneLabelCountsOnlyKnownLocalNumberPositions() {
+        assertEquals("手機號碼(10碼)", phoneLabel("********75"))
+        assertEquals("手機號碼(10碼)", phoneLabel("(•••) ●●●-00XX"))
+        for (value in listOf("+40 *** *** *22", "+4*0 ***22", "0040 ***22", "…75", "...75", "")) {
+            assertEquals("手機號碼", phoneLabel(value))
+        }
+    }
+
+    @Test
     fun internationalPrefixesIncludeRomaniaAndPreserveSharedRegions() {
         for ((code, region) in
             listOf(
